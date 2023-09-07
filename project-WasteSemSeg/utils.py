@@ -345,6 +345,6 @@ def create_checkpoint_net(net_name):
     scheduler = StepLR(
         optimizer, step_size=cfg.TRAIN.NUM_EPOCH_LR_DECAY, gamma=cfg.TRAIN.LR_DECAY)
 
-    net, optimizer, scheduler, start_epoch, mIoU_list = load_checkpoints(
+    net, optimizer, scheduler, start_epoch, mIoU_list, aluminium_mIoU_list, paper_mIoU_list, bottle_mIoU_list, nylon_mIoU_list = load_checkpoints(
         net_name, net, optimizer, scheduler)
     return net
