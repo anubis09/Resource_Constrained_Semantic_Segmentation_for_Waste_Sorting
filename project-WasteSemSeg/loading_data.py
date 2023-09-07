@@ -35,6 +35,7 @@ def loading_data():
         standard_transforms.ToPILImage()
     ])
 
+    # put train_simul_transform_aug to set data augmentation in the training set.
     train_set = resortit('train', simul_transform=train_simul_transform, transform=img_transform,
                            target_transform=target_transform)
     train_loader = DataLoader(train_set, batch_size=cfg.TRAIN.BATCH_SIZE, num_workers=16, shuffle=True)
