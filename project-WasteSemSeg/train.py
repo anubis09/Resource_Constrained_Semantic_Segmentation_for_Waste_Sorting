@@ -55,7 +55,7 @@ def main(net_name = 'Enet', loss_name = 'Cross_Entropy', checkpoint = False):
     net.train()
     #criterion = torch.nn.BCEWithLogitsLoss().cuda() # Binary Classification
     criterion = set_loss(loss_name)
-    print(f"criterion successufully set to: {loss_name if loss_name != "" else "Cross-entropy"}")
+    print(f"criterion successufully set to: {loss_name if loss_name != '' else 'Cross-entropy'}")
     optimizer = optim.Adam(net.parameters(), lr=cfg.TRAIN.LR, weight_decay=cfg.TRAIN.WEIGHT_DECAY)
     scheduler = StepLR(optimizer, step_size=cfg.TRAIN.NUM_EPOCH_LR_DECAY, gamma=cfg.TRAIN.LR_DECAY)
     _t = {'train time' : Timer(),'val time' : Timer()} 
