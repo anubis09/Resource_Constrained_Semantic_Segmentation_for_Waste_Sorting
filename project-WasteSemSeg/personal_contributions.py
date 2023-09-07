@@ -21,21 +21,9 @@ import torch.nn as nn
 
 '''
 
-
-def recursive_module_name(module, method, amount): # 😢
-    
-    if isinstance(module, torch.nn):
-        method(module, name='weight', amount=amount)
-        is_pruned = torch.nn.utils.prune.is_pruned(module)
-        print(f'pruned layer: {is_pruned}')
-        return
-    
-    for _, module in module.named_modules():
-        recursive_module_name(module, method, amount)
-    
-    return
-
-def get_pruned_model(model, method=prune.random_unstructured, amount=0.8, n=2, dim=0):
+# This function takes as input the model, the prune method, the amount of parameters to prune, and two parameters of the ln_unstructured method
+# and returns the pruned model. 
+def get_pruned_model(model, method=prune.l1_unstructured, amount=0.2, n=2, dim=0):
 
     N_modules = 0
     N_pruned_modules = 0
@@ -58,9 +46,6 @@ def get_pruned_model(model, method=prune.random_unstructured, amount=0.8, n=2, d
                 method(module, name='weight')
                 N_pruned_modules += 1
 
-        # pruning Linear -> 0/338 😢
-        # pruning BatchNorm2d ->  69/338, BUT no improvments 😢
-
         N_modules += 1
 
     print(f'TOT layers pruned = {N_pruned_modules}/{N_modules}')
@@ -70,10 +55,12 @@ def get_pruned_model(model, method=prune.random_unstructured, amount=0.8, n=2, d
 
 ''' 
 
-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-    QUANTTIZATION      #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-
+#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-    QUANTIZATION      #-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-
 
 '''
 
+# This function takes as input the model, the val loader, and the net name (for the final print) 
+# and returns the quantized model. 
 def get_quantized_model(model, val_loader, net_str):
 
     backend = "fbgemm" if "x86" in platform.machine() else "qnnpack"
@@ -104,7 +91,7 @@ def get_quantized_model(model, val_loader, net_str):
     return model_quantized
 
 
-
+# This function takes the quantised model and returns the parameters size.
 def get_qmodel_param_size(qmodel):
 
     quantized_dict = qmodel.state_dict()
@@ -123,6 +110,9 @@ def get_qmodel_param_size(qmodel):
 
     return (total_size_mb, none_type_counter)
 
+# The validate function is needed because the quantized models only works on cpu. 
+# It take as input the val_loader, the net, the criterion and a boolean to know if the model is quantized,
+# it returns the mean_IoU of the network over the validate set. 
 def validate_(val_loader, net, criterion, is_quantized=False):
     net.eval()
     criterion.cpu()
