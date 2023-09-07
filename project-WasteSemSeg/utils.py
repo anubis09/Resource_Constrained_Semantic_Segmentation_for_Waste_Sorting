@@ -118,9 +118,8 @@ def scores(label_trues, label_preds, n_class):
             'FreqW Acc : \t': fwavacc,
             'Mean IoU : \t': mean_iu, }, cls_iu
 
-# setting net
 
-
+# This function takes as input the net name and returs the corresponding model.
 def set_net(net_name):
     net_name = net_name.lower()
     if (net_name == 'enet'):
@@ -166,7 +165,7 @@ def showTicksLabels(xticks):
 
     return xticklabels
 
-
+# This function is useful in the colab to generate the plots of the mIoU values.
 def plot_mIoU_validation(net_str, mIoU_list, aluminium_mIoU_list, paper_mIoU_list, bottle_mIoU_list,	nylon_mIoU_list, N_epoch, lr, N_classes):
 
     # FIG 1
@@ -305,7 +304,7 @@ def plot_mIoU_validation(net_str, mIoU_list, aluminium_mIoU_list, paper_mIoU_lis
 
     plt.show()
 
-
+# This functions is needed to load checkpoints in the colab notebook. 
 def load_checkpoints(net_name, net, optimizer, scheduler):
     if len(os.listdir(f'checkpoints/{net_name}')) > 1:
         # load the saved checkpoint
@@ -332,7 +331,7 @@ def load_checkpoints(net_name, net, optimizer, scheduler):
         print(f"✅ Model '{path_pth_file}' Loaded\n")
         return net, optimizer, scheduler, start_epoch, mIoU_list, aluminium_mIoU_list, paper_mIoU_list, bottle_mIoU_list, nylon_mIoU_list
 
-
+# This function create a net from the checkpoint that must be placed inside the corresponding folder "checkpoits/{net_name}".
 def create_checkpoint_net(net_name):
     net_name = net_name.lower()
     net = set_net(net_name)
