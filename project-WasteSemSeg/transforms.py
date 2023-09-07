@@ -64,29 +64,6 @@ class RandomHorizontallyFlip(object):
             return img.transpose(Image.FLIP_LEFT_RIGHT), mask.transpose(Image.FLIP_LEFT_RIGHT)
         return img, mask
 
-# CUSTOM TRANSFORMS
-
-class RandomVerticalFlip(object):
-    def __call__(self, img, mask):
-        if random.random() < 1: # original 0.5
-            return img.transpose(Image.FLIP_TOP_BOTTOM), mask.transpose(Image.FLIP_TOP_BOTTOM)
-        return img, mask
-    
-class RandomRotation(object):
-    def __call__(self, img, mask):
-        if random.random() < 0.5:
-            return img.transpose(Image.ROTATE_180), mask.transpose(Image.ROTATE_180)
-        return img, mask
-
-#   colors transformations
-class RandomColorsJitter(object):
-    def __call__(self, img, mask):
-        if random.random() < 0.25:
-            # float chosen uniformly in (min,max)
-            transform = transforms.ColorJitter(brightness=(0,0.15), contrast=(0), saturation=(0,0.15), hue=(-0.05,0.05))
-            return transform(img), mask
-        return img, mask
-
 class FreeScale(object):
     def __init__(self, size, interpolation=Image.NEAREST):
         self.size = size  # (h, w)
@@ -117,6 +94,33 @@ class Scale(object):
             ow = int(self.size * w / h)
             return img.resize((ow, oh), Image.BILINEAR), mask.resize((ow, oh), Image.NEAREST)
 
+
+# ------- CUSTOM TRANSFORMS --------
+
+# This function applies a random vertical flip over the image and the image mask,
+# with probability 0.5.
+class RandomVerticalFlip(object):
+    def __call__(self, img, mask):
+        if random.random() < 0.5: 
+            return img.transpose(Image.FLIP_TOP_BOTTOM), mask.transpose(Image.FLIP_TOP_BOTTOM)
+        return img, mask
+        
+# This function applies a random 180 degree rotation over the image and the image mask,
+# with probability 0.5.
+class RandomRotation(object):
+    def __call__(self, img, mask):
+        if random.random() < 0.5:
+            return img.transpose(Image.ROTATE_180), mask.transpose(Image.ROTATE_180)
+        return img, mask
+
+# This function applies a random color alteration over the image, with probability 0.25.
+class RandomColorsJitter(object):
+    def __call__(self, img, mask):
+        if random.random() < 0.25:
+            # float chosen uniformly in (min,max)
+            transform = transforms.ColorJitter(brightness=(0,0.15), contrast=(0), saturation=(0,0.15), hue=(-0.05,0.05))
+            return transform(img), mask
+        return img, mask
 
 
 # ===============================label tranforms============================
