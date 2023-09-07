@@ -25,24 +25,7 @@ log_txt = cfg.TRAIN.EXP_LOG_PATH + '/' + exp_name + '.txt'
 writer = SummaryWriter(cfg.TRAIN.EXP_PATH+ '/' + exp_name)
 
 pil_to_tensor = standard_transforms.ToTensor()
-#train_loader, train_augmented_loader, val_loader, restore_transform = loading_data()
 train_loader, val_loader, restore_transform = loading_data()
-
-
-#are we in a plateau?
-#we want to compare the mean of the last ten iteration with the value of the ten before. If there is a low improvement
-#we are in a plateau.
-def change_training(optimizer, scheduler, train_loader,net, epoch, miou):
-    miou = np.array(miou)
-    ten_before = miou[epoch-19:epoch-9].mean()
-    last_ten = miou[epoch-9:epoch+1].mean()
-    if (last_ten <= ten_before*1.02):
-        #the mean of last ten iteration isn't 2% better of the mean of the ten before
-        lr = optimizer.param_groups[0]['lr']/2
-        optimizer = optim.Adam(net.parameters(), lr=lr, weight_decay=cfg.TRAIN.WEIGHT_DECAY)
-        scheduler = StepLR(optimizer, step_size=cfg.TRAIN.NUM_EPOCH_LR_DECAY, gamma=cfg.TRAIN.LR_DECAY)
-        #train_loader = train_augmented_loader
-    return optimizer, scheduler, train_loader
 
 
 def main(net_name = 'Enet', loss_name = 'Cross_Entropy', checkpoint = False):
@@ -60,8 +43,7 @@ def main(net_name = 'Enet', loss_name = 'Cross_Entropy', checkpoint = False):
     if len(cfg.TRAIN.GPU_ID)==1:
         torch.cuda.set_device(cfg.TRAIN.GPU_ID[0])
     torch.backends.cudnn.benchmark = True
-
-    #net=[]
+    
     net = set_net(net_name)  
     print(f"Net successufully set to: {net_name}")  
 
@@ -72,14 +54,13 @@ def main(net_name = 'Enet', loss_name = 'Cross_Entropy', checkpoint = False):
 
     net.train()
     #criterion = torch.nn.BCEWithLogitsLoss().cuda() # Binary Classification
-    #criterion = torch.nn.CrossEntropyLoss().cuda() #instance segmentation
     criterion = set_loss(loss_name)
     print(f"criterion successufully set to: {loss_name}")
     optimizer = optim.Adam(net.parameters(), lr=cfg.TRAIN.LR, weight_decay=cfg.TRAIN.WEIGHT_DECAY)
     scheduler = StepLR(optimizer, step_size=cfg.TRAIN.NUM_EPOCH_LR_DECAY, gamma=cfg.TRAIN.LR_DECAY)
     _t = {'train time' : Timer(),'val time' : Timer()} 
 
-    # Validation
+    # Validation lists for plots
     mIoU_list = []
     aluminium_mIoU_list = []
     paper_mIoU_list = []
@@ -87,10 +68,10 @@ def main(net_name = 'Enet', loss_name = 'Cross_Entropy', checkpoint = False):
     nylon_mIoU_list = []
 
     if checkpoint:
+        # load the checkpoint net.
         net, optimizer, scheduler, start_epoch, mIoU_list, aluminium_mIoU_list, paper_mIoU_list, bottle_mIoU_list, nylon_mIoU_list = load_checkpoints(net_name, net, optimizer, scheduler)
-        #start_epoch += 1 #because the start_epoch was already trained.
 
-    print() # FOR NOW ONLY
+    print() 
     print(f'Initial mIoU NO TRAINING: ', end='')
 
     validate(val_loader, net, criterion, optimizer, -1, restore_transform)
@@ -113,12 +94,8 @@ def main(net_name = 'Enet', loss_name = 'Cross_Entropy', checkpoint = False):
         nylon_mIoU_list.append(nylon_mIoU)
         _t['val time'].toc(average=False)
         print('🟢 VALIDATION time of epoch {}/{} = {:.2f}s'.format(epoch+1, start_epoch+cfg.TRAIN.MAX_EPOCH,  _t['val time'].diff))
-        
-    
-        #if(epoch>=19 and epoch+1%10==0) :
-        #    optimizer, scheduler, train_loader = change_training(optimizer, scheduler, train_loader, net, epoch, mIoU_list)
             
-        # save the model state every few epochs 
+        # save the model state every 10 epochs 
         if (epoch+1) % save_every == 0:
             checkpoint = {
                 'model_state_dict': net.state_dict(),
@@ -150,7 +127,7 @@ def train(train_loader, net, criterion, optimizer, scheduler, epoch):
    
         optimizer.zero_grad()
         outputs = net(inputs)
-        #loss = criterion(outputs, labels.unsqueeze(1).float())
+        #loss = criterion(outputs, labels.unsqueeze(1).float()) # Binary Segmentation
         loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
@@ -178,20 +155,12 @@ def validate(val_loader, net, criterion, optimizer, epoch, restore):
         #for binary classification
         # outputs[outputs>0.5] = 1
         # outputs[outputs<=0.5] = 0
-        
-        # multi-classification
-        # outputs[outputs<=0.5] = 0 #background
-        # outputs[(outputs>0.5) & (outputs<=1.5)] = 1 #aluminium
-        # outputs[(outputs>1.5) & (outputs<=2.5)] = 2 #paper
-        # outputs[(outputs>2.5) & (outputs<=3.5)] = 3 #bottle
-        # outputs[outputs>3.5] = 4 #nylon
 
         softmax = nn.Softmax(dim=1)
         outputs = torch.argmax(softmax(outputs),dim=1)
   
         iou, iou_classes = calculate_mean_iu([outputs.squeeze_(1).data.cpu().numpy()], [labels.data.cpu().numpy()], cfg.DATA.NUM_CLASSES)
         iou_ += iou
-        #iou_classes_ = np.sum(iou_classes, iou_classes_)
         iou_classes_ = [sum(x) for x in zip(iou_classes_, iou_classes)]
 
         validation_progress.update(1)
