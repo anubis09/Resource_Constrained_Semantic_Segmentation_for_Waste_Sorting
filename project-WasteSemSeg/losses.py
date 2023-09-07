@@ -10,14 +10,13 @@ def set_loss(loss_name):
     match loss_name:
         case "focal":
             loss = losses.FocalLoss("multiclass", gamma = 2).cuda()
-            # possible values for gamma :0.1, 0.5, 1, 5 
+            # possible values for gamma : 1, 2, 5 
         case "lovasz":
             loss = losses.LovaszLoss("multiclass").cuda()
         case "dice":
             loss = losses.DiceLoss("multiclass").cuda()
         case "cbfl":
-            #loss = CB_loss
-            loss = CB_loss(cfg.DATA.NUM_CLASSES, 0.9, 2).cuda() # we need to change the function, because we need a class.
+            loss = CB_loss(cfg.DATA.NUM_CLASSES, 0.9, 2).cuda() 
         case "f+l":
             loss = Combined_losses("focal", "lovasz")
         case _:
@@ -34,8 +33,7 @@ class Combined_losses(nn.Module):
         sum = self.first(y_pred, y_true) + self.second(y_pred, y_true)
         return sum
 
-
-#-----------------------------EXPERIMENTAL PART, IT DOESN'T WORK ------------------------------------------
+#-------------------
 
 def focal_loss(labels, logits, alpha, gamma):
     """Compute the focal loss between `logits` and the ground truth `labels`.
